@@ -1,0 +1,40 @@
+[package]
+name = "ciws"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+description = "Fans the WARDOGS kill feed out to as many destinations as you like"
+license = "MIT"
+
+[dependencies]
+anyhow = "1"
+arc-swap = "1"
+axum = { version = "0.8", default-features = false, features = ["http1", "tokio"] }
+base64 = "0.23"
+bytes = "1"
+clap = { version = "4", features = ["derive", "env"] }
+getrandom = "0.4"
+humantime = "2"
+# The allocator everywhere: musl's own, in the static Linux builds and so the Docker image, took
+# four times the CPU under load. Like ring, it builds with the platform's own compiler.
+mimalloc = { version = "0.1", default-features = false }
+reqwest = { version = "0.13", default-features = false, features = ["http2", "rustls-no-provider"] }
+# ring for TLS: it builds with each platform's own compiler, nothing else to install.
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["raw_value"] }
+sha2 = "0.11"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "time", "signal", "sync"] }
+tokio-util = "0.7"
+toml = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+url = "2"
+
+[dev-dependencies]
+tempfile = "3"
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+strip = true

@@ -1,0 +1,8 @@
+target
+.git
+ciws.toml
+.env
+docs
+examples
+tests
+branding

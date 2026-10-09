@@ -1,0 +1,27 @@
+# CIWS sends your WARDOGS server's kill feed to every [[target]] in ciws.toml.
+#
+# Keep this file and ciws.toml in one folder. Once, to make ciws.toml with a new token and see
+# what to put in the game server's config:
+#
+#   docker run --rm ghcr.io/warcon-app/ciws init > ciws.toml
+#
+# Add your targets to ciws.toml, then:
+#
+#   docker compose up -d
+#   docker compose logs -f        what CIWS is doing
+#
+# Saving ciws.toml applies it; no restart needed. To update CIWS:
+#
+#   docker compose pull && docker compose up -d
+#
+# A game server on the same machine or network posts to http://<this machine>:7780. One that posts
+# across the internet needs HTTPS: see the README's HTTPS section for a Caddy service in front.
+services:
+  ciws:
+    image: ghcr.io/warcon-app/ciws:latest
+    restart: unless-stopped
+    volumes:
+      - .:/config:ro
+    ports:
+      - "7780:7780"            # the game posts here
+      - "127.0.0.1:7781:7781"  # http://127.0.0.1:7781/status, from this machine only

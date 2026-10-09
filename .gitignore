@@ -1,0 +1,6 @@
+/target
+# holds tokens
+ciws.toml
+.env
+# the logo generator's dependencies (branding/src: bun install)
+branding/src/node_modules/

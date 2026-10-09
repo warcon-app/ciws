@@ -1,0 +1,95 @@
+# Pushing a tag such as v0.1.0 builds CIWS on each system's own runner, attaches the files to a
+# GitHub release of that name (one file each, nothing to install; the Linux ones are static, so
+# they run on any distribution), and publishes ghcr.io/warcon-app/ciws for amd64 and arm64 from
+# the same Linux files. Only the standard Rust toolchain is used, plus Ubuntu's musl-tools for the
+# static Linux builds.
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest, target: x86_64-unknown-linux-musl, file: ciws-linux-x86_64 }
+          - { os: ubuntu-24.04-arm, target: aarch64-unknown-linux-musl, file: ciws-linux-arm64 }
+          - { os: windows-latest, target: x86_64-pc-windows-msvc, file: ciws-windows-x86_64.exe }
+          - { os: macos-latest, target: aarch64-apple-darwin, file: ciws-macos-arm64 }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - run: rustup target add ${{ matrix.target }}
+      - if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+      - run: cargo build --release --locked --target ${{ matrix.target }}
+      - name: Name the file
+        shell: bash
+        run: |
+          mkdir dist
+          built=target/${{ matrix.target }}/release/ciws
+          [ -f "$built.exe" ] && built="$built.exe"
+          cp "$built" "dist/${{ matrix.file }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.file }}
+          path: dist/${{ matrix.file }}
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Attach the files to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd dist && sha256sum * > SHA256SUMS
+          gh release create "${{ github.ref_name }}" ./* --repo "${{ github.repository }}" \
+            --title "${{ github.ref_name }}" --generate-notes
+
+  image:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      IMAGE: ghcr.io/warcon-app/ciws
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: ciws-linux-*
+          path: artifacts
+          merge-multiple: true
+      - name: Lay the Linux files out by platform
+        run: |
+          mkdir -p image/amd64 image/arm64
+          cp artifacts/ciws-linux-x86_64 image/amd64/ciws
+          cp artifacts/ciws-linux-arm64 image/arm64/ciws
+          chmod +x image/*/ciws
+      - name: Build and push
+        run: |
+          echo "${{ github.token }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker buildx create --use
+          version="${GITHUB_REF_NAME#v}"
+          source="https://github.com/${{ github.repository }}"
+          docker buildx build --platform linux/amd64,linux/arm64 \
+            --file .github/release.Dockerfile \
+            --label "org.opencontainers.image.source=$source" \
+            --label "org.opencontainers.image.version=$version" \
+            --annotation "index:org.opencontainers.image.source=$source" \
+            --tag "$IMAGE:$version" --tag "$IMAGE:latest" \
+            --push image

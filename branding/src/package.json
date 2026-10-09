@@ -1,0 +1,7 @@
+{
+  "private": true,
+  "description": "Makes the CIWS logo set: bun install && bun generate.ts",
+  "dependencies": {
+    "opentype.js": "2.0.0"
+  }
+}

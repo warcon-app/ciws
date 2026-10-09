@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="CIWS mark">
+  <mask id="r"><rect width="64" height="64" fill="#fff"/><path d="M6.5 32H27M27 32L39 20H56M27 32H56M27 32L39 44H56" fill="none" stroke="#000" stroke-width="5.5" stroke-linecap="square" stroke-linejoin="miter"/>
+  <circle cx="27" cy="32" r="5.5" fill="#000"/></mask>
+  <path d="M0 0H48L64 16V64H16L0 48Z" fill="#FFFFFF" mask="url(#r)"/>
+</svg>

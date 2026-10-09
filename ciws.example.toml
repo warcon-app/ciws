@@ -1,0 +1,47 @@
+# Every setting CIWS has. Most people need only the first part: a token, and a [[target]]
+# for each place the kill feed should go. Running `ciws` the first time makes a file like
+# that, with a new token, and says what to put in the game server's config.
+#
+# Any value may use ${ENV_VAR} to keep a secret out of this file. Saving the file applies it.
+
+# What the game sends as Token in its [WDServerFeed] section. `ciws token` makes one.
+token = "..."
+
+# Rarely changed. These two must stay above the first [[target]].
+# listen = "0.0.0.0:7780"          # where the game posts (the CIWS_LISTEN variable overrides it)
+# admin_listen = "127.0.0.1:7781"  # /status and /metrics (CIWS_ADMIN_LISTEN overrides it)
+
+# Warcon: the token is on the server's Config tab, under Kill feed.
+[[target]]
+url = "https://console.warcon.app"  # the address alone, as for the game's Url: CIWS adds /api/ingest/events
+token = "wkf_..."                   # sent as Authorization: Bearer <token>
+
+# The same game server in a second Warcon organisation: same url, its own token.
+# [[target]]
+# url = "https://console.warcon.app"
+# token = "wkf_..."
+
+# Anything else that takes the game's kill feed, with the extras some need.
+# [[target]]
+# name = "stats"                    # how logs and /status call it; made from the host if left out
+# url = "https://stats.example.com/hooks/wardogs"
+# path = ""                         # post to url exactly as written
+# headers = { "X-Api-Key" = "${STATS_API_KEY}" }
+# max_age = "10m"                   # skip batches an outage made older than this, rather than
+#                                   # deliver them late (for targets that act on kills live)
+
+# More game servers: a [[feed]] each, with its own token and targets.
+# [[feed]]
+# name = "server-2"
+# token = "..."
+#
+#   [[feed.target]]
+#   url = "https://console.warcon.app"
+#   token = "wkf_..."
+
+# [delivery]
+# timeout = "10s"        # per attempt
+# queue = 1000           # batches each target may have waiting; when full, the oldest go
+# min_backoff = "1s"     # a failing target is tried again after 1s, 2s, 4s ... up to max_backoff
+# max_backoff = "5m"
+# block_private = false  # true: no target may be on a private, loopback or link-local address
